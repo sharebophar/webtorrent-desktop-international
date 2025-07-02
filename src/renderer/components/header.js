@@ -1,6 +1,7 @@
 const React = require('react')
 
 const { dispatcher } = require('../lib/dispatcher')
+const { t } = require('../lib/i18n')
 
 class Header extends React.Component {
   render () {
@@ -17,21 +18,21 @@ class Header extends React.Component {
         <div className='nav left float-left'>
           <i
             className={'icon back ' + (loc.hasBack() ? '' : 'disabled')}
-            title='Back'
+            title={t('header.back')}
             onClick={dispatcher('back')}
             role='button'
             aria-disabled={!loc.hasBack()}
-            aria-label='Back'
+            aria-label={t('header.back')}
           >
             chevron_left
           </i>
           <i
             className={'icon forward ' + (loc.hasForward() ? '' : 'disabled')}
-            title='Forward'
+            title={t('header.forward')}
             onClick={dispatcher('forward')}
             role='button'
             aria-disabled={!loc.hasForward()}
-            aria-label='Forward'
+            aria-label={t('header.forward')}
           >
             chevron_right
           </i>
@@ -55,7 +56,7 @@ class Header extends React.Component {
     return (
       <i
         className='icon add'
-        title='Add torrent'
+        title={t('header.addTorrent')}
         onClick={dispatcher('openFiles')}
         role='button'
       >

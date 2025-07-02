@@ -2,20 +2,21 @@ const React = require('react')
 
 const ModalOKCancel = require('./modal-ok-cancel')
 const { dispatch, dispatcher } = require('../lib/dispatcher')
+const { t } = require('../lib/i18n')
 
 module.exports = class RemoveTorrentModal extends React.Component {
   render () {
     const state = this.props.state
     const message = state.modal.deleteData
-      ? 'Are you sure you want to remove this torrent from the list and delete the data file?'
-      : 'Are you sure you want to remove this torrent from the list?'
-    const buttonText = state.modal.deleteData ? 'REMOVE DATA' : 'REMOVE'
+      ? t('removeTorrentModal.removeAndDelete')
+      : t('removeTorrentModal.removeOnly')
+    const buttonText = state.modal.deleteData ? t('removeTorrentModal.removeData') : t('removeTorrentModal.remove')
 
     return (
       <div>
         <p><strong>{message}</strong></p>
         <ModalOKCancel
-          cancelText='CANCEL'
+          cancelText={t('modal.cancel')}
           onCancel={dispatcher('exitModal')}
           okText={buttonText}
           onOK={handleRemove}

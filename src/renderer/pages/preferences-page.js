@@ -1,15 +1,19 @@
 const React = require('react')
 const PropTypes = require('prop-types')
+const electron = window.require ? window.require('electron') : null
 
 const colors = require('material-ui/styles/colors')
 const Checkbox = require('material-ui/Checkbox').default
 const RaisedButton = require('material-ui/RaisedButton').default
 const TextField = require('material-ui/TextField').default
+const SelectField = require('material-ui/SelectField').default
+const MenuItem = require('material-ui/MenuItem').default
 const Heading = require('../components/heading')
 const PathSelector = require('../components/path-selector')
 
 const { dispatch } = require('../lib/dispatcher')
 const config = require('../../config')
+const { t, setLocale, getLocale, getAvailableLocales } = require('../lib/i18n')
 
 class PreferencesPage extends React.Component {
   constructor (props) {
@@ -33,10 +37,14 @@ class PreferencesPage extends React.Component {
     this.handleSetGlobalTrackers =
       this.handleSetGlobalTrackers.bind(this)
 
+    this.handleLanguageChange =
+      this.handleLanguageChange.bind(this)
+
     const globalTrackers = this.props.state.getGlobalTrackers().join('\n')
 
     this.state = {
-      globalTrackers
+      globalTrackers,
+      currentLocale: getLocale()
     }
   }
 
@@ -45,11 +53,11 @@ class PreferencesPage extends React.Component {
       <Preference>
         <PathSelector
           dialog={{
-            title: 'Select download directory',
+            title: t('preferences.selectDownloadDirectory'),
             properties: ['openDirectory']
           }}
           onChange={this.handleDownloadPathChange}
-          title='Download location'
+          title={t('preferences.downloadLocation')}
           value={this.props.state.saved.prefs.downloadPath}
         />
       </Preference>
@@ -66,7 +74,7 @@ class PreferencesPage extends React.Component {
         <Checkbox
           className='control'
           checked={!this.props.state.saved.prefs.openExternalPlayer}
-          label='Play torrent media files using WebTorrent'
+          label={t('preferences.playTorrentMediaFiles')}
           onCheck={this.handleOpenExternalPlayerChange}
         />
       </Preference>
@@ -83,10 +91,10 @@ class PreferencesPage extends React.Component {
         <Checkbox
           className='control'
           checked={this.props.state.saved.prefs.highestPlaybackPriority}
-          label='Highest Playback Priority'
+          label={t('preferences.highestPlaybackPriority')}
           onCheck={this.handleHighestPlaybackPriorityChange}
         />
-        <p>Pauses all active torrents to allow playback to use all of the available bandwidth.</p>
+        <p>{t('preferences.highestPlaybackPriorityDesc')}</p>
       </Preference>
     )
   }
@@ -100,19 +108,19 @@ class PreferencesPage extends React.Component {
     const playerName = this.props.state.getExternalPlayerName()
 
     const description = this.props.state.saved.prefs.openExternalPlayer
-      ? `Torrent media files will always play in ${playerName}.`
-      : `Torrent media files will play in ${playerName} if WebTorrent cannot play them.`
+      ? t('preferences.externalPlayerDesc', { playerName })
+      : t('preferences.externalPlayerDescAlt', { playerName })
 
     return (
       <Preference>
         <p>{description}</p>
         <PathSelector
           dialog={{
-            title: 'Select media player app',
+            title: t('preferences.selectMediaPlayerApp'),
             properties: ['openFile']
           }}
           onChange={this.handleExternalPlayerPathChange}
-          title='External player'
+          title={t('preferences.externalPlayer')}
           value={playerPath}
         />
       </Preference>
@@ -129,7 +137,7 @@ class PreferencesPage extends React.Component {
         <Checkbox
           className='control'
           checked={this.props.state.saved.prefs.autoAddTorrents}
-          label='Watch for new .torrent files and add them immediately'
+          label={t('preferences.watchForNewTorrents')}
           onCheck={(e, value) => { this.handleAutoAddTorrentsChange(e, value) }}
         />
       </Preference>
@@ -139,7 +147,7 @@ class PreferencesPage extends React.Component {
   handleAutoAddTorrentsChange (e, isChecked) {
     const torrentsFolderPath = this.props.state.saved.prefs.torrentsFolderPath
     if (isChecked && !torrentsFolderPath) {
-      alert('Select a torrents folder first.') // eslint-disable-line
+      alert(t('preferences.selectTorrentsFolderFirst')) // eslint-disable-line
       e.preventDefault()
       return
     }
@@ -161,11 +169,11 @@ class PreferencesPage extends React.Component {
       <Preference>
         <PathSelector
           dialog={{
-            title: 'Select folder to watch for new torrents',
+            title: t('preferences.selectFolderToWatch'),
             properties: ['openDirectory']
           }}
           onChange={this.handleTorrentsFolderPathChange}
-          title='Folder to watch'
+          title={t('preferences.folderToWatch')}
           value={torrentsFolderPath}
         />
       </Preference>
@@ -181,17 +189,17 @@ class PreferencesPage extends React.Component {
     if (isFileHandler) {
       return (
         <Preference>
-          <p>WebTorrent is your default torrent app. Hooray!</p>
+          <p>{t('preferences.defaultAppHooray')}</p>
         </Preference>
       )
     }
     return (
       <Preference>
-        <p>WebTorrent is not currently the default torrent app.</p>
+        <p>{t('preferences.defaultAppNotSet')}</p>
         <RaisedButton
           className='control'
           onClick={this.handleSetDefaultApp}
-          label='Make WebTorrent the default'
+          label={t('preferences.makeDefault')}
         />
       </Preference>
     )
@@ -272,6 +280,44 @@ class PreferencesPage extends React.Component {
     dispatch('updateGlobalTrackers', announceList)
   }
 
+  handleLanguageChange (event, index, value) {
+    this.setState({ currentLocale: value })
+    setLocale(value)
+    dispatch('updatePreferences', 'language', value)
+    if (electron && electron.ipcRenderer) {
+      electron.ipcRenderer.send('set-locale', value)
+    }
+    window.location.reload()
+  }
+
+  languageSelector () {
+    const locales = getAvailableLocales()
+    const localeNames = {
+      'en': 'English',
+      'zh': '中文'
+    }
+
+    return (
+      <Preference>
+        <SelectField
+          className='control'
+          value={this.state.currentLocale}
+          onChange={this.handleLanguageChange}
+          floatingLabelText={t('preferences.language')}
+          style={{ width: '100%' }}
+        >
+          {locales.map(locale => (
+            <MenuItem
+              key={locale}
+              value={locale}
+              primaryText={localeNames[locale] || locale}
+            />
+          ))}
+        </SelectField>
+      </Preference>
+    )
+  }
+
   render () {
     const style = {
       color: colors.grey400,
@@ -280,24 +326,27 @@ class PreferencesPage extends React.Component {
     }
     return (
       <div style={style}>
-        <PreferencesSection title='Folders'>
+        <PreferencesSection title={t('preferences.language')}>
+          {this.languageSelector()}
+        </PreferencesSection>
+        <PreferencesSection title={t('preferences.folders')}>
           {this.downloadPathSelector()}
           {this.autoAddTorrentsCheckbox()}
           {this.torrentsFolderPathSelector()}
         </PreferencesSection>
-        <PreferencesSection title='Playback'>
+        <PreferencesSection title={t('preferences.playback')}>
           {this.openExternalPlayerCheckbox()}
           {this.externalPlayerPathSelector()}
           {this.highestPlaybackPriorityCheckbox()}
         </PreferencesSection>
-        <PreferencesSection title='Default torrent app'>
+        <PreferencesSection title={t('preferences.defaultTorrentApp')}>
           {this.setDefaultAppButton()}
         </PreferencesSection>
-        <PreferencesSection title='General'>
+        <PreferencesSection title={t('preferences.general')}>
           {this.setStartupCheckbox()}
           {this.soundNotificationsCheckbox()}
         </PreferencesSection>
-        <PreferencesSection title='Trackers'>
+        <PreferencesSection title={t('preferences.trackers')}>
           {this.setGlobalTrackers()}
         </PreferencesSection>
       </div>

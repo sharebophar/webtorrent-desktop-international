@@ -4,6 +4,7 @@ const colors = require('material-ui/styles/colors')
 const remote = require('@electron/remote')
 const React = require('react')
 const PropTypes = require('prop-types')
+const { t } = require('../lib/i18n')
 
 const RaisedButton = require('material-ui/RaisedButton').default
 const TextField = require('material-ui/TextField').default
@@ -15,9 +16,9 @@ class PathSelector extends React.Component {
   static propTypes () {
     return {
       className: PropTypes.string,
-      dialog: PropTypes.object,
+      dialog: PropTypes.object.isRequired,
       id: PropTypes.string,
-      onChange: PropTypes.func,
+      onChange: PropTypes.func.isRequired,
       title: PropTypes.string.isRequired,
       value: PropTypes.string
     }
@@ -29,14 +30,18 @@ class PathSelector extends React.Component {
   }
 
   handleClick () {
-    const opts = Object.assign({
-      defaultPath: path.dirname(this.props.value || ''),
-      properties: ['openFile', 'openDirectory']
-    }, this.props.dialog)
+    const { dialog, onChange } = this.props
+    const { remote } = require('electron')
 
-    const filenames = remote.dialog.showOpenDialogSync(remote.getCurrentWindow(), opts)
-    if (!Array.isArray(filenames)) return
-    this.props.onChange && this.props.onChange(filenames[0])
+    remote.dialog.showOpenDialog(remote.getCurrentWindow(), dialog)
+      .then((result) => {
+        if (!result.canceled && result.filePaths.length > 0) {
+          onChange(result.filePaths[0])
+        }
+      })
+      .catch((err) => {
+        console.error(err)
+      })
   }
 
   render () {
@@ -74,7 +79,7 @@ class PathSelector extends React.Component {
           inputStyle={textareaStyle} style={textFieldStyle}
         />
         <RaisedButton
-          className='control' label='Change' onClick={this.handleClick}
+          className='control' label={t('pathSelector.change')} onClick={this.handleClick}
           style={buttonStyle}
         />
       </div>

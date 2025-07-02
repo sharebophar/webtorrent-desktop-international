@@ -1,6 +1,7 @@
 const React = require('react')
 const FlatButton = require('material-ui/FlatButton').default
 const RaisedButton = require('material-ui/RaisedButton').default
+const { t } = require('../lib/i18n')
 
 module.exports = class ModalOKCancel extends React.Component {
   render () {
@@ -11,13 +12,13 @@ module.exports = class ModalOKCancel extends React.Component {
         <FlatButton
           className='control cancel'
           style={cancelStyle}
-          label={cancelText}
+          label={cancelText || t('modal.cancel')}
           onClick={onCancel}
         />
         <RaisedButton
           className='control ok'
           primary
-          label={okText}
+          label={okText || t('modal.ok')}
           onClick={onOK}
           autoFocus
         />

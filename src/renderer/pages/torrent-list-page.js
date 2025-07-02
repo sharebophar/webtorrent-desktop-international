@@ -8,6 +8,7 @@ const TorrentSummary = require('../lib/torrent-summary')
 const TorrentPlayer = require('../lib/torrent-player')
 const { dispatcher } = require('../lib/dispatcher')
 const { calculateEta } = require('../lib/time')
+const { t } = require('../lib/i18n')
 
 module.exports = class TorrentList extends React.Component {
   render () {
@@ -17,10 +18,9 @@ module.exports = class TorrentList extends React.Component {
     if (state.downloadPathStatus === 'missing') {
       contents.push(
         <div key='torrent-missing-path'>
-          <p>Download path missing: {state.saved.prefs.downloadPath}</p>
-          <p>Check that all drives are connected?</p>
-          <p>Alternatively, choose a new download path
-            in <a href='#' onClick={dispatcher('preferences')}>Preferences</a>
+          <p>{t('torrentList.downloadPathMissing', { path: state.saved.prefs.downloadPath })}</p>
+          <p>{t('torrentList.checkDrivesConnected')}</p>
+          <p>{t('torrentList.chooseNewPath')} <a href='#' onClick={dispatcher('preferences')}>{t('menu.preferences')}</a>
           </p>
         </div>
       )
@@ -31,7 +31,7 @@ module.exports = class TorrentList extends React.Component {
     contents.push(...torrentElems)
     contents.push(
       <div key='torrent-placeholder' className='torrent-placeholder'>
-        <span className='ellipsis'>Drop a torrent file here or paste a magnet link</span>
+        <span className='ellipsis'>{t('torrentList.dropTorrentHere')}</span>
       </div>
     )
 
@@ -84,7 +84,7 @@ module.exports = class TorrentList extends React.Component {
 
   // Show name, download status, % complete
   renderTorrentMetadata (torrentSummary) {
-    const name = torrentSummary.name || 'Loading torrent...'
+    const name = torrentSummary.name || t('torrentList.loadingTorrent')
     const elements = [(
       <div key='name' className='name ellipsis'>{name}</div>
     )]
@@ -177,7 +177,7 @@ module.exports = class TorrentList extends React.Component {
 
     function renderPeers () {
       if (prog.numPeers === 0) return
-      const count = prog.numPeers === 1 ? 'peer' : 'peers'
+      const count = prog.numPeers === 1 ? t('torrentList.peer') : t('torrentList.peers')
       return (<span key='peers'>{prog.numPeers} {count}</span>)
     }
 
@@ -205,14 +205,14 @@ module.exports = class TorrentList extends React.Component {
       let status
       if (torrentSummary.status === 'paused') {
         if (!torrentSummary.progress) status = ''
-        else if (torrentSummary.progress.progress === 1) status = 'Not seeding'
-        else status = 'Paused'
+        else if (torrentSummary.progress.progress === 1) status = t('torrentList.status.notSeeding')
+        else status = t('torrentList.status.paused')
       } else if (torrentSummary.status === 'downloading') {
         if (!torrentSummary.progress) status = ''
-        else if (!torrentSummary.progress.ready) status = 'Verifying'
-        else status = 'Downloading'
+        else if (!torrentSummary.progress.ready) status = t('torrentList.status.verifying')
+        else status = t('torrentList.status.downloading')
       } else if (torrentSummary.status === 'seeding') {
-        status = 'Seeding'
+        status = t('torrentList.status.seeding')
       } else { // torrentSummary.status is 'new' or something unexpected
         status = ''
       }
@@ -268,10 +268,10 @@ module.exports = class TorrentList extends React.Component {
         message = torrentSummary.error.message || torrentSummary.error
       } else if (torrentSummary.status === 'paused') {
         // No file info, no infohash, and we're not trying to download from the DHT
-        message = 'Failed to load torrent info. Click the download button to try again...'
+        message = t('torrentList.failedToLoadInfo')
       } else {
         // No file info, no infohash, trying to load from the DHT
-        message = 'Downloading torrent info...'
+        message = t('torrentList.downloadingInfo')
       }
       filesElement = (
         <div key='files' className='files warning'>

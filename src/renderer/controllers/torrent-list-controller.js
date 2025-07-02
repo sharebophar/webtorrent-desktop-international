@@ -7,6 +7,8 @@ const { dispatch } = require('../lib/dispatcher')
 const { TorrentKeyNotFoundError } = require('../lib/errors')
 const sound = require('../lib/sound')
 const TorrentSummary = require('../lib/torrent-summary')
+const TorrentPlayer = require('../lib/torrent-player')
+const { t } = require('../lib/i18n')
 
 const instantIoRegex = /^(https:\/\/)?instant\.io\/#/
 
@@ -258,12 +260,12 @@ module.exports = class TorrentListController {
     const menu = new remote.Menu()
 
     menu.append(new remote.MenuItem({
-      label: 'Remove From List',
+      label: t('torrentContextMenu.removeFromList'),
       click: () => dispatch('confirmDeleteTorrent', torrentSummary.infoHash, false)
     }))
 
     menu.append(new remote.MenuItem({
-      label: 'Remove Data File',
+      label: t('torrentContextMenu.removeDataFile'),
       click: () => dispatch('confirmDeleteTorrent', torrentSummary.infoHash, true)
     }))
 
@@ -273,7 +275,7 @@ module.exports = class TorrentListController {
 
     if (torrentSummary.files) {
       menu.append(new remote.MenuItem({
-        label: process.platform === 'darwin' ? 'Show in Finder' : 'Show in Folder',
+        label: process.platform === 'darwin' ? t('torrentContextMenu.showInFinder') : t('torrentContextMenu.showInFolder'),
         click: () => showItemInFolder(torrentSummary)
       }))
       menu.append(new remote.MenuItem({
@@ -282,17 +284,17 @@ module.exports = class TorrentListController {
     }
 
     menu.append(new remote.MenuItem({
-      label: 'Copy Magnet Link to Clipboard',
+      label: t('torrentContextMenu.copyMagnetLink'),
       click: () => clipboard.writeText(torrentSummary.magnetURI)
     }))
 
     menu.append(new remote.MenuItem({
-      label: 'Copy Instant.io Link to Clipboard',
+      label: t('torrentContextMenu.copyInstantLink'),
       click: () => clipboard.writeText(`https://instant.io/#${torrentSummary.infoHash}`)
     }))
 
     menu.append(new remote.MenuItem({
-      label: 'Save Torrent File As...',
+      label: t('torrentContextMenu.saveTorrentFileAs'),
       click: () => dispatch('saveTorrentFileAs', torrentSummary.torrentKey),
       enabled: torrentSummary.torrentFileName != null
     }))
@@ -303,7 +305,7 @@ module.exports = class TorrentListController {
 
     const sortedByName = this.state.saved.prefs.sortByName
     menu.append(new remote.MenuItem({
-      label: `${sortedByName ? '✓ ' : ''}Sort by Name`,
+      label: `${sortedByName ? '✓ ' : ''}${t('torrentContextMenu.sortByName')}`,
       click: () => dispatch('updatePreferences', 'sortByName', !sortedByName)
     }))
 
@@ -319,13 +321,13 @@ module.exports = class TorrentListController {
     const newFileName = path.parse(torrentSummary.name).name + '.torrent'
     const win = remote.getCurrentWindow()
     const opts = {
-      title: 'Save Torrent File',
+      title: t('torrentContextMenu.saveTorrentFileAs'),
       defaultPath: path.join(downloadPath, newFileName),
       filters: [
         { name: 'Torrent Files', extensions: ['torrent'] },
         { name: 'All Files', extensions: ['*'] }
       ],
-      buttonLabel: 'Save'
+      buttonLabel: t('preferences.save')
     }
 
     const savePath = remote.dialog.showSaveDialogSync(win, opts)

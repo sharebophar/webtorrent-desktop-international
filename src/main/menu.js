@@ -1,3 +1,26 @@
+const { app, Menu, ipcMain } = require('electron')
+
+const config = require('../config')
+const windows = require('./windows')
+const { t, setLocale } = require('./i18n')
+const appConfig = require('application-config')('WebTorrent')
+
+let menu = null
+
+// 监听渲染进程语言切换事件
+ipcMain.on('set-locale', (event, locale) => {
+  setLocale(locale)
+  init() // 重新设置菜单
+})
+
+// 读取已保存语言并设置
+appConfig.read().then(config => {
+  if (config && config.prefs && config.prefs.language) {
+    setLocale(config.prefs.language)
+  }
+  init() // 初始化菜单
+})
+
 module.exports = {
   init,
   togglePlaybackControls,
@@ -8,63 +31,56 @@ module.exports = {
   onToggleFullScreen
 }
 
-const { app, Menu } = require('electron')
-
-const config = require('../config')
-const windows = require('./windows')
-
-let menu = null
-
 function init () {
   menu = Menu.buildFromTemplate(getMenuTemplate())
   Menu.setApplicationMenu(menu)
 }
 
 function togglePlaybackControls (flag) {
-  getMenuItem('Play/Pause').enabled = flag
-  getMenuItem('Skip Next').enabled = flag
-  getMenuItem('Skip Previous').enabled = flag
-  getMenuItem('Increase Volume').enabled = flag
-  getMenuItem('Decrease Volume').enabled = flag
-  getMenuItem('Step Forward').enabled = flag
-  getMenuItem('Step Backward').enabled = flag
-  getMenuItem('Increase Speed').enabled = flag
-  getMenuItem('Decrease Speed').enabled = flag
-  getMenuItem('Add Subtitles File...').enabled = flag
+  getMenuItem(t('menu.playPause')).enabled = flag
+  getMenuItem(t('menu.skipNext')).enabled = flag
+  getMenuItem(t('menu.skipPrevious')).enabled = flag
+  getMenuItem(t('menu.increaseVolume')).enabled = flag
+  getMenuItem(t('menu.decreaseVolume')).enabled = flag
+  getMenuItem(t('menu.stepForward')).enabled = flag
+  getMenuItem(t('menu.stepBackward')).enabled = flag
+  getMenuItem(t('menu.increaseSpeed')).enabled = flag
+  getMenuItem(t('menu.decreaseSpeed')).enabled = flag
+  getMenuItem(t('menu.addSubtitlesFile')).enabled = flag
 
   if (flag === false) {
-    getMenuItem('Skip Next').enabled = false
-    getMenuItem('Skip Previous').enabled = false
+    getMenuItem(t('menu.skipNext')).enabled = false
+    getMenuItem(t('menu.skipPrevious')).enabled = false
   }
 }
 
 function onPlayerUpdate (hasNext, hasPrevious) {
-  getMenuItem('Skip Next').enabled = hasNext
-  getMenuItem('Skip Previous').enabled = hasPrevious
+  getMenuItem(t('menu.skipNext')).enabled = hasNext
+  getMenuItem(t('menu.skipPrevious')).enabled = hasPrevious
 }
 
 function setWindowFocus (flag) {
-  getMenuItem('Full Screen').enabled = flag
-  getMenuItem('Float on Top').enabled = flag
+  getMenuItem(t('menu.fullScreen')).enabled = flag
+  getMenuItem(t('menu.floatOnTop')).enabled = flag
 }
 
 // Disallow opening more screens on top of the current one.
 function setAllowNav (flag) {
-  getMenuItem('Preferences').enabled = flag
+  getMenuItem(t('menu.preferences')).enabled = flag
   if (process.platform === 'darwin') {
-    getMenuItem('Create New Torrent...').enabled = flag
+    getMenuItem(t('menu.createNewTorrent')).enabled = flag
   } else {
-    getMenuItem('Create New Torrent from Folder...').enabled = flag
-    getMenuItem('Create New Torrent from File...').enabled = flag
+    getMenuItem(t('menu.createNewTorrentFromFolder')).enabled = flag
+    getMenuItem(t('menu.createNewTorrentFromFile')).enabled = flag
   }
 }
 
 function onToggleAlwaysOnTop (flag) {
-  getMenuItem('Float on Top').checked = flag
+  getMenuItem(t('menu.floatOnTop')).checked = flag
 }
 
 function onToggleFullScreen (flag) {
-  getMenuItem('Full Screen').checked = flag
+  getMenuItem(t('menu.fullScreen')).checked = flag
 }
 
 function getMenuItem (label) {
@@ -78,12 +94,12 @@ function getMenuItem (label) {
 function getMenuTemplate () {
   const template = [
     {
-      label: 'File',
+      label: t('menu.file'),
       submenu: [
         {
           label: process.platform === 'darwin'
-            ? 'Create New Torrent...'
-            : 'Create New Torrent from Folder...',
+            ? t('menu.createNewTorrent')
+            : t('menu.createNewTorrentFromFolder'),
           accelerator: 'CmdOrCtrl+N',
           click: () => {
             const dialog = require('./dialog')
@@ -91,7 +107,7 @@ function getMenuTemplate () {
           }
         },
         {
-          label: 'Open Torrent File...',
+          label: t('menu.openTorrentFile'),
           accelerator: 'CmdOrCtrl+O',
           click: () => {
             const dialog = require('./dialog')
@@ -99,7 +115,7 @@ function getMenuTemplate () {
           }
         },
         {
-          label: 'Open Torrent Address...',
+          label: t('menu.openTorrentAddress'),
           accelerator: 'CmdOrCtrl+U',
           click: () => {
             const dialog = require('./dialog')
@@ -110,45 +126,57 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          role: 'close'
+          label: t('menu.close'),
+          accelerator: process.platform === 'darwin' ? 'Cmd+W' : 'Ctrl+W',
+          click: () => {
+            const { BrowserWindow } = require('electron')
+            const focusedWindow = BrowserWindow.getFocusedWindow()
+            if (focusedWindow) focusedWindow.close()
+          }
         }
       ]
     },
     {
-      label: 'Edit',
+      label: t('menu.edit'),
       submenu: [
         {
+          label: t('menu.undo'),
           role: 'undo'
         },
         {
+          label: t('menu.redo'),
           role: 'redo'
         },
         {
           type: 'separator'
         },
         {
+          label: t('menu.cut'),
           role: 'cut'
         },
         {
+          label: t('menu.copy'),
           role: 'copy'
         },
         {
-          label: 'Paste Torrent Address',
+          label: t('menu.pasteTorrentAddress'),
           role: 'paste'
         },
         {
+          label: t('menu.delete'),
           role: 'delete'
         },
         {
+          label: t('menu.selectAll'),
           role: 'selectall'
         }
       ]
     },
     {
-      label: 'View',
+      label: t('menu.view'),
       submenu: [
         {
-          label: 'Full Screen',
+          label: t('menu.fullScreen'),
           type: 'checkbox',
           accelerator: process.platform === 'darwin'
             ? 'Ctrl+Command+F'
@@ -156,7 +184,7 @@ function getMenuTemplate () {
           click: () => windows.main.toggleFullScreen()
         },
         {
-          label: 'Float on Top',
+          label: t('menu.floatOnTop'),
           type: 'checkbox',
           click: () => windows.main.toggleAlwaysOnTop()
         },
@@ -164,7 +192,7 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Go Back',
+          label: t('menu.goBack'),
           accelerator: 'Esc',
           click: () => windows.main.dispatch('escapeBack')
         },
@@ -172,17 +200,17 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Developer',
+          label: t('menu.developer'),
           submenu: [
             {
-              label: 'Developer Tools',
+              label: t('menu.developerTools'),
               accelerator: process.platform === 'darwin'
                 ? 'Alt+Command+I'
                 : 'Ctrl+Shift+I',
               click: () => windows.main.toggleDevTools()
             },
             {
-              label: 'Show WebTorrent Process',
+              label: t('menu.showWebTorrentProcess'),
               accelerator: process.platform === 'darwin'
                 ? 'Alt+Command+P'
                 : 'Ctrl+Shift+P',
@@ -193,10 +221,10 @@ function getMenuTemplate () {
       ]
     },
     {
-      label: 'Playback',
+      label: t('menu.playback'),
       submenu: [
         {
-          label: 'Play/Pause',
+          label: t('menu.playPause'),
           accelerator: 'Space',
           click: () => windows.main.dispatch('playPause'),
           enabled: false
@@ -205,13 +233,13 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Skip Next',
+          label: t('menu.skipNext'),
           accelerator: 'N',
           click: () => windows.main.dispatch('nextTrack'),
           enabled: false
         },
         {
-          label: 'Skip Previous',
+          label: t('menu.skipPrevious'),
           accelerator: 'P',
           click: () => windows.main.dispatch('previousTrack'),
           enabled: false
@@ -220,13 +248,13 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Increase Volume',
+          label: t('menu.increaseVolume'),
           accelerator: 'CmdOrCtrl+Up',
           click: () => windows.main.dispatch('changeVolume', 0.1),
           enabled: false
         },
         {
-          label: 'Decrease Volume',
+          label: t('menu.decreaseVolume'),
           accelerator: 'CmdOrCtrl+Down',
           click: () => windows.main.dispatch('changeVolume', -0.1),
           enabled: false
@@ -235,7 +263,7 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Step Forward',
+          label: t('menu.stepForward'),
           accelerator: process.platform === 'darwin'
             ? 'CmdOrCtrl+Alt+Right'
             : 'Alt+Right',
@@ -243,7 +271,7 @@ function getMenuTemplate () {
           enabled: false
         },
         {
-          label: 'Step Backward',
+          label: t('menu.stepBackward'),
           accelerator: process.platform === 'darwin'
             ? 'CmdOrCtrl+Alt+Left'
             : 'Alt+Left',
@@ -254,13 +282,13 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Increase Speed',
+          label: t('menu.increaseSpeed'),
           accelerator: 'CmdOrCtrl+=',
           click: () => windows.main.dispatch('changePlaybackRate', 1),
           enabled: false
         },
         {
-          label: 'Decrease Speed',
+          label: t('menu.decreaseSpeed'),
           accelerator: 'CmdOrCtrl+-',
           click: () => windows.main.dispatch('changePlaybackRate', -1),
           enabled: false
@@ -269,53 +297,53 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Add Subtitles File...',
+          label: t('menu.addSubtitlesFile'),
           click: () => windows.main.dispatch('openSubtitles'),
           enabled: false
         }
       ]
     },
     {
-      label: 'Transfers',
+      label: t('menu.transfers'),
       submenu: [
         {
-          label: 'Pause All',
+          label: t('menu.pauseAll'),
           click: () => windows.main.dispatch('pauseAllTorrents')
         },
         {
-          label: 'Resume All',
+          label: t('menu.resumeAll'),
           click: () => windows.main.dispatch('resumeAllTorrents')
         },
         {
-          label: 'Remove All From List',
+          label: t('menu.removeAllFromList'),
           click: () => windows.main.dispatch('confirmDeleteAllTorrents', false)
         },
         {
-          label: 'Remove All Data Files',
+          label: t('menu.removeAllDataFiles'),
           click: () => windows.main.dispatch('confirmDeleteAllTorrents', true)
         }
       ]
     },
     {
-      label: 'Help',
+      label: t('menu.help'),
       role: 'help',
       submenu: [
         {
-          label: 'Learn more about ' + config.APP_NAME,
+          label: t('menu.learnMore', { appName: config.APP_NAME }),
           click: () => {
             const shell = require('./shell')
             shell.openExternal(config.HOME_PAGE_URL)
           }
         },
         {
-          label: 'Release Notes',
+          label: t('menu.releaseNotes'),
           click: () => {
             const shell = require('./shell')
             shell.openExternal(config.GITHUB_URL_RELEASES)
           }
         },
         {
-          label: 'Contribute on GitHub',
+          label: t('menu.contributeOnGitHub'),
           click: () => {
             const shell = require('./shell')
             shell.openExternal(config.GITHUB_URL)
@@ -325,14 +353,14 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Report an Issue...',
+          label: t('menu.reportAnIssue'),
           click: () => {
             const shell = require('./shell')
             shell.openExternal(config.GITHUB_URL_ISSUES)
           }
         },
         {
-          label: 'Follow us on Twitter',
+          label: t('menu.followUsOnTwitter'),
           click: () => {
             const shell = require('./shell')
             shell.openExternal(config.TWITTER_PAGE_URL)
@@ -354,7 +382,7 @@ function getMenuTemplate () {
           type: 'separator'
         },
         {
-          label: 'Preferences',
+          label: t('menu.preferences'),
           accelerator: 'Cmd+,',
           click: () => windows.main.dispatch('preferences')
         },
@@ -391,7 +419,7 @@ function getMenuTemplate () {
         type: 'separator'
       },
       {
-        label: 'Speech',
+        label: t('menu.speech'),
         submenu: [
           {
             role: 'startspeaking'
@@ -425,7 +453,7 @@ function getMenuTemplate () {
   if (process.platform === 'linux' || process.platform === 'win32') {
     // File menu (Windows, Linux)
     template[0].submenu.unshift({
-      label: 'Create New Torrent from File...',
+      label: t('menu.createNewTorrentFromFile'),
       click: () => {
         const dialog = require('./dialog')
         dialog.openSeedFile()
@@ -438,7 +466,7 @@ function getMenuTemplate () {
         type: 'separator'
       },
       {
-        label: 'Preferences',
+        label: t('menu.preferences'),
         accelerator: 'CmdOrCtrl+,',
         click: () => windows.main.dispatch('preferences')
       })
@@ -449,7 +477,7 @@ function getMenuTemplate () {
         type: 'separator'
       },
       {
-        label: 'About ' + config.APP_NAME,
+        label: t('menu.about', { appName: config.APP_NAME }),
         click: () => windows.about.init()
       }
     )
@@ -459,7 +487,7 @@ function getMenuTemplate () {
   if (process.platform === 'linux') {
     // File menu (Linux)
     template[0].submenu.push({
-      label: 'Quit',
+      label: t('menu.quit'),
       click: () => app.quit()
     })
   }

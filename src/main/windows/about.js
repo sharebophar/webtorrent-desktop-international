@@ -5,6 +5,7 @@ const about = module.exports = {
 
 const config = require('../../config')
 const { BrowserWindow } = require('electron')
+const { t } = require('../i18n')
 
 function init () {
   if (about.win) {
@@ -22,7 +23,7 @@ function init () {
     resizable: false,
     show: false,
     skipTaskbar: true,
-    title: 'About ' + config.APP_WINDOW_TITLE,
+    title: t('about.title', { appName: config.APP_WINDOW_TITLE }),
     useContentSize: true,
     webPreferences: {
       nodeIntegration: true,

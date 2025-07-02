@@ -78,6 +78,12 @@ function onState (err, _state) {
     'error', (e) => telemetry.logUncaughtError('window', e), true /* capture */
   )
 
+  // 读取已保存的语言并设置
+  if (state.saved && state.saved.prefs && state.saved.prefs.language) {
+    const { setLocale } = require('./lib/i18n')
+    setLocale(state.saved.prefs.language)
+  }
+
   // Create controllers
   controllers = {
     media: createGetter(() => {
@@ -513,11 +519,19 @@ function onOpen (files) {
 }
 
 function onError (err) {
+  let msg = err.message || err
+  // 针对常见英文报错做二次翻译
+  if (msg === 'Invalid torrent identifier') {
+    msg = t('error.invalidTorrentIdentifier')
+  }
+  if (msg === 'Cannot add duplicate torrent') {
+    msg = t('error.duplicateTorrent')
+  }
   console.error(err.stack || err)
   sound.play('ERROR')
   state.errors.push({
     time: new Date().getTime(),
-    message: err.message || err
+    message: msg
   })
 
   update()
@@ -525,11 +539,14 @@ function onError (err) {
 
 const editableHtmlTags = new Set(['input', 'textarea'])
 
+const { t } = require('../lib/i18n')
+
 function onPaste (e) {
   if (e && editableHtmlTags.has(e.target.tagName.toLowerCase())) return
   controllers.torrentList().addTorrent(electron.clipboard.readText())
 
-  update()
+  // 粘贴无效时的提示
+  return onError(t('error.goBackToList'))
 }
 
 function onKeydown (e) {
