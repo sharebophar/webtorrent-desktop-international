@@ -78,7 +78,7 @@ function onState (err, _state) {
     'error', (e) => telemetry.logUncaughtError('window', e), true /* capture */
   )
 
-  // 读取已保存的语言并设置
+  // 读取已保存的语言并设置（不刷新页面）
   if (state.saved && state.saved.prefs && state.saved.prefs.language) {
     const { setLocale } = require('./lib/i18n')
     setLocale(state.saved.prefs.language)
